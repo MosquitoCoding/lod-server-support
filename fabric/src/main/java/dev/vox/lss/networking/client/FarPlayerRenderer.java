@@ -31,6 +31,7 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.feature.submit.SubmitNode;
 import net.minecraft.client.renderer.gizmos.DrawableGizmoPrimitives;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
@@ -960,6 +961,15 @@ public final class FarPlayerRenderer {
         @Override
         public void submitBreakingBlockModel(PoseStack poseStack, List<BlockStateModelPart> parts, int progress, boolean translucent) {
             delegate.submitBreakingBlockModel(poseStack, parts, progress, translucent);
+        }
+
+        @Override
+        public <S> void submitCrumblingOverlay(Model<? super S> model, S state, PoseStack poseStack,
+                                               RenderType renderType, int lightCoords, int overlayCoords,
+                                               int tintedColor, ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
+            int tier = model == skinModel ? -1 : tierOf(renderType);
+            delegate.submitCrumblingOverlay(model, state, lifted(poseStack, tier), renderType,
+                    lightCoords, overlayCoords, tintedColor, crumblingOverlay);
         }
 
         @Override
