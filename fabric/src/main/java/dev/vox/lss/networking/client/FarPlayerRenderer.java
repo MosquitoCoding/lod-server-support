@@ -33,7 +33,6 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.submit.SubmitNode;
 import net.minecraft.client.renderer.gizmos.DrawableGizmoPrimitives;
-import net.minecraft.client.renderer.item.ItemQuads;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -945,7 +944,7 @@ public final class FarPlayerRenderer {
 
         @Override
         public void submitItem(PoseStack poseStack, ItemDisplayContext displayContext, int lightCoords,
-                               int overlayCoords, int outlineColor, int[] tintLayers, ItemQuads quads,
+                               int overlayCoords, int outlineColor, int[] tintLayers, ItemStackRenderState.ItemQuads quads,
                                ItemStackRenderState.FoilType foilType) {
             delegate.submitItem(lifted(poseStack, 2), displayContext, lightCoords, overlayCoords, outlineColor,
                     tintLayers, quads, foilType);
@@ -959,17 +958,8 @@ public final class FarPlayerRenderer {
         }
 
         @Override
-        public void submitBlockModel(PoseStack poseStack, Function<ChunkSectionLayer, RenderType> renderTypes,
-                                     boolean translucent, List<BlockStateModelPart> parts, Mesh mesh,
-                                     int[] tintLayers, int lightCoords, int overlayCoords, int outlineColor) {
-            // The layer the FRAPI default resolves this overload to — the same tier lookup as vanilla's.
-            delegate.submitBlockModel(lifted(poseStack, tierOf(ChunkSectionLayerHelper.getRenderType(translucent))),
-                    renderTypes, translucent, parts, mesh, tintLayers, lightCoords, overlayCoords, outlineColor);
-        }
-
-        @Override
-        public void submitBreakingBlockModel(PoseStack poseStack, List<BlockStateModelPart> parts, int progress) {
-            delegate.submitBreakingBlockModel(poseStack, parts, progress, false);
+        public void submitBreakingBlockModel(PoseStack poseStack, List<BlockStateModelPart> parts, int progress, boolean translucent) {
+            delegate.submitBreakingBlockModel(poseStack, parts, progress, translucent);
         }
 
         @Override
