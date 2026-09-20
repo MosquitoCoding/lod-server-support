@@ -50,7 +50,7 @@ jobs:
                       except Exception:
                           continue
                       for line in q.stdout.splitlines():
-                          if line.endswith('/ItemQuads.class') or line == 'ItemQuads.class':
+                          if 'ItemQuads' in line and line.endswith('.class'):
                               print('ITEM_QUADS_JAR='+p)
                               print('ITEM_QUADS_CLASS='+line[:-6].replace('/','.').replace('        run: ./gradlew :fabric:build -x runGameTest -x runClientGameTest
 
