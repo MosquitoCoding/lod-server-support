@@ -974,6 +974,11 @@ public final class FarPlayerRenderer {
         }
 
         @Override
+        public void submitTextBackground(PoseStack poseStack, float x1, float y1, float x2, float y2,
+                                          int color, Font.DisplayMode displayMode, int outlineColor) {
+            delegate.submitTextBackground(poseStack, x1, y1, x2, y2, color, displayMode, outlineColor);
+        }
+        @Override
         public void submitShadow(PoseStack poseStack, float radius, List<EntityRenderState.ShadowPiece> pieces) {
             delegate.submitShadow(poseStack, radius, pieces);
         }
