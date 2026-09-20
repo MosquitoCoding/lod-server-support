@@ -931,10 +931,11 @@ public final class FarPlayerRenderer {
 
         @Override
         public <S> void submitModel(Model<? super S> model, S state, PoseStack poseStack, RenderType renderType,
-                                    int lightCoords, int overlayCoords, int tintedColor) {
+                                    int lightCoords, int overlayCoords, int tintedColor,
+                                    OrderedSubmitNodeCollector.UvMapping uvMapping, int outlineColor) {
             int tier = model == skinModel ? -1 : tierOf(renderType);
             delegate.submitModel(model, state, lifted(poseStack, tier), renderType, lightCoords, overlayCoords,
-                    tintedColor);
+                    tintedColor, uvMapping, outlineColor);
         }
 
         @Override
@@ -945,7 +946,7 @@ public final class FarPlayerRenderer {
 
         @Override
         public void submitItem(PoseStack poseStack, ItemDisplayContext displayContext, int lightCoords,
-                               int overlayCoords, int outlineColor, int[] tintLayers, ItemStackRenderState.ItemQuads quads,
+                               int overlayCoords, int outlineColor, int[] tintLayers, OrderedSubmitNodeCollector.ItemQuads quads,
                                ItemStackRenderState.FoilType foilType) {
             delegate.submitItem(lifted(poseStack, 2), displayContext, lightCoords, overlayCoords, outlineColor,
                     tintLayers, quads, foilType);
