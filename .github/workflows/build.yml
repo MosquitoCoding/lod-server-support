@@ -28,6 +28,22 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
+      - name: Inspect MC 26.3 render API
+        run: |
+          cat > /tmp/printcp.gradle <<'EOF'
+          gradle.afterProject { p ->
+            if (p.path == ':fabric') {
+              p.tasks.register('printMinecraftCompileClasspath') {
+                doLast {
+                  configurations.compileClasspath.files.each { println "CP=${it}" }
+                }
+              }
+            }
+          }
+          EOF
+          ./gradlew -q -I /tmp/printcp.gradle :fabric:printMinecraftCompileClasspath > /tmp/cp.txt
+          CP=$(sed -n 's/^CP=//p' /tmp/cp.txt | tr '\n' ':')
+          javap -classpath "$CP" -p net.minecraft.client.renderer.OrderedSubmitNodeCollector
       - name: Build Fabric + Tier 1 tests
         run: ./gradlew :fabric:build -x runGameTest -x runClientGameTest
 
