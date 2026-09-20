@@ -9,7 +9,6 @@ import dev.vox.lss.config.LSSClientConfig;
 import dev.vox.lss.mixin.AccessorEntityRenderDispatcher;
 import dev.vox.lss.mixin.AccessorLivingEntity;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh;
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.MeshView;
 import net.fabricmc.fabric.api.client.renderer.v1.render.ChunkSectionLayerHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.SubmitRenderPhase;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -37,13 +36,14 @@ import net.minecraft.client.renderer.feature.submit.SubmitNode;
 import net.minecraft.client.renderer.gizmos.DrawableGizmoPrimitives;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.texture.UvMapping;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.EquipmentAssetManager;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.resources.model.geometry.ItemQuads;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -498,7 +498,7 @@ public final class FarPlayerRenderer {
                 BlockPos realBlock = realPlayer.blockPosition();
                 // Vanilla draws no body there (F4) — this line's extraction gate, verbatim.
                 if (!level.isOutsideBuildHeight(realBlock.getY())
-                        && !minecraft.levelRenderer.isSectionCompiledAndVisible(realBlock)) continue;
+                        && !minecraft.levelRenderer.isSectionCompiledAndVisible(realBlock, level.getGameTime())) continue;
                 double cameraDistanceSq = cameraPosition.distanceToSqr(realPosition);
                 double range = realPlayer.getAttributeValue(Attributes.NAME_TAG_DISTANCE); // vanilla's own tag range (camera-based, as its cap is)
                 if (cameraDistanceSq < range * range) continue;
@@ -934,11 +934,10 @@ public final class FarPlayerRenderer {
         @Override
         public <S> void submitModel(Model<? super S> model, S state, PoseStack poseStack, RenderType renderType,
                                     int lightCoords, int overlayCoords, int tintedColor,
-                                    TextureAtlasSprite sprite, int outlineColor,
-                                    ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
+                                    UvMapping uvMapping, int outlineColor) {
             int tier = model == skinModel ? -1 : tierOf(renderType);
             delegate.submitModel(model, state, lifted(poseStack, tier), renderType, lightCoords, overlayCoords,
-                    tintedColor, sprite, outlineColor, crumblingOverlay);
+                    tintedColor, uvMapping, outlineColor);
         }
 
         @Override
@@ -949,21 +948,10 @@ public final class FarPlayerRenderer {
 
         @Override
         public void submitItem(PoseStack poseStack, ItemDisplayContext displayContext, int lightCoords,
-                               int overlayCoords, int outlineColor, int[] tintLayers, List<BakedQuad> quads,
+                               int overlayCoords, int outlineColor, int[] tintLayers, ItemQuads quads,
                                ItemStackRenderState.FoilType foilType) {
             delegate.submitItem(lifted(poseStack, 2), displayContext, lightCoords, overlayCoords, outlineColor,
                     tintLayers, quads, foilType);
-        }
-
-        // Fabric's renderer API injects mesh-carrying twins of the item/block submits (their
-        // defaults drop the mesh and fall back to the vanilla method); forward them WITH the
-        // mesh so an FRAPI-enhanced held item keeps its geometry.
-        @Override
-        public void submitItem(PoseStack poseStack, ItemDisplayContext displayContext, int lightCoords,
-                               int overlayCoords, int outlineColor, int[] tintLayers, List<BakedQuad> quads,
-                               MeshView mesh, ItemStackRenderState.FoilType foilType) {
-            delegate.submitItem(lifted(poseStack, 2), displayContext, lightCoords, overlayCoords, outlineColor,
-                    tintLayers, quads, mesh, foilType);
         }
 
         @Override
@@ -974,25 +962,24 @@ public final class FarPlayerRenderer {
         }
 
         @Override
-        public void submitBlockModel(PoseStack poseStack, Function<ChunkSectionLayer, RenderType> renderTypes,
-                                     boolean translucent, List<BlockStateModelPart> parts, Mesh mesh,
-                                     int[] tintLayers, int lightCoords, int overlayCoords, int outlineColor) {
-            // The layer the FRAPI default resolves this overload to — the same tier lookup as vanilla's.
-            delegate.submitBlockModel(lifted(poseStack, tierOf(ChunkSectionLayerHelper.getRenderType(translucent))),
-                    renderTypes, translucent, parts, mesh, tintLayers, lightCoords, overlayCoords, outlineColor);
+        public void submitBreakingBlockModel(PoseStack poseStack, List<BlockStateModelPart> parts, int progress, boolean translucent) {
+            delegate.submitBreakingBlockModel(poseStack, parts, progress, translucent);
         }
 
         @Override
-        public void submitBreakingBlockModel(PoseStack poseStack, List<BlockStateModelPart> parts, int progress) {
-            delegate.submitBreakingBlockModel(poseStack, parts, progress);
+        public <S> void submitCrumblingOverlay(Model<? super S> model, S state, PoseStack poseStack,
+                                               RenderType renderType, int lightCoords, int overlayCoords,
+                                               int tintedColor, ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
+            int tier = model == skinModel ? -1 : tierOf(renderType);
+            delegate.submitCrumblingOverlay(model, state, lifted(poseStack, tier), renderType,
+                    lightCoords, overlayCoords, tintedColor, crumblingOverlay);
         }
 
         @Override
-        public void submitBreakingBlockModel(PoseStack poseStack, List<BlockStateModelPart> parts, Mesh mesh,
-                                             int progress) {
-            delegate.submitBreakingBlockModel(poseStack, parts, mesh, progress);
+        public void submitTextBackground(PoseStack poseStack, float x1, float y1, float x2, float y2,
+                                          int color, Font.DisplayMode displayMode, int outlineColor) {
+            delegate.submitTextBackground(poseStack, x1, y1, x2, y2, color, displayMode, outlineColor);
         }
-
         @Override
         public void submitShadow(PoseStack poseStack, float radius, List<EntityRenderState.ShadowPiece> pieces) {
             delegate.submitShadow(poseStack, radius, pieces);
@@ -1151,7 +1138,7 @@ public final class FarPlayerRenderer {
         try {
             poseStack.translate(anchor.x - cameraPosition.x, anchor.y - cameraPosition.y,
                     anchor.z - cameraPosition.z);
-            poseStack.mulPose(cameraState.orientation);
+            poseStack.last().rotate(cameraState.orientation);
             poseStack.scale(scale, -scale, scale);
             float x = -font.width(name) / 2.0f;
             int background = (int) (minecraft.options.getBackgroundOpacity(0.25f) * 255.0f) << 24;
@@ -1291,9 +1278,6 @@ public final class FarPlayerRenderer {
          *  Rebuilt per apply from the equipment the wire just set; identity-keyed. */
         private void refreshLiftTiers(EquipmentAssetManager equipmentAssets) {
             liftTiers.clear();
-            liftTiers.put(Sheets.armorTrimsSheet(true), 1);
-            liftTiers.put(Sheets.armorTrimsSheet(false), 1);
-            liftTiers.put(RenderTypes.armorEntityGlint(), 1);
             if (equipmentAssets == null) return;
             for (EquipmentSlot slot : ARMOR_EQUIPMENT_SLOTS) {
                 Equippable equippable = this.getItemBySlot(slot).get(DataComponents.EQUIPPABLE);
